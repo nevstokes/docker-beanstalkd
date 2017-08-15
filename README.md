@@ -5,3 +5,7 @@
 Tiny Alpine-based image for beanstalkd v1.10.
 
 See http://kr.github.io/beanstalkd for general info.
+
+Available from [Docker Hub](https://hub.docker.com/r/nevstokes/beanstalkd/) with:
+
+    $ docker pull nevstokes/beanstalkd
