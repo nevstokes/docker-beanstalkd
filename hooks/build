@@ -4,5 +4,4 @@ docker build \
     --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
     --build-arg VCS_REF=$SOURCE_COMMIT \
     --build-arg VCS_URL=`git config --get remote.origin.url` \
-    -t $IMAGE_NAME:1.10 \
     -t $IMAGE_NAME .
