@@ -1,21 +1,22 @@
 FROM alpine:3.6 AS build
 
-COPY alpine.patch /
+COPY alpine.patch github-releases.xsl /
 
-ARG BEANSTALKD_VERSION=1.10
+ENV GITHUB_REPO=kr/beanstalkd
 
-RUN set -euxo pipefail \
-    \
-    && apk --update add \
+RUN apk --update add \
         gcc \
         libressl \
+        libxslt-dev \
         make \
-        musl-dev \
+        musl-dev
+
+RUN mkdir -p /usr/src/beanstalk \
     \
-    && mkdir -p /usr/src/beanstalk \
-    && wget -qO- https://github.com/kr/beanstalkd/archive/v$BEANSTALKD_VERSION.tar.gz | tar xz -C /usr/src/beanstalk --strip-components=1 \
-    \
-    && cd /usr/src/beanstalk \
+    && export BEANSTALKD_VERSION=`wget -q https://github.com/$GITHUB_REPO/releases.atom -O - | xsltproc /github-releases.xsl - | awk -F/ '{ print $NF; }'` \
+    && wget -qO- https://github.com/$GITHUB_REPO/archive/$BEANSTALKD_VERSION.tar.gz | tar xz -C /usr/src/beanstalk --strip-components=1
+
+RUN cd /usr/src/beanstalk \
     && patch -p0 < /alpine.patch \
     && make CFLAGS=-Os \
     \
@@ -27,16 +28,12 @@ FROM alpine:3.6 AS libs
 COPY --from=build /usr/src/beanstalk/beanstalkd /usr/local/bin/
 COPY --from=build /var/cache/apk /var/cache/apk/
 
-RUN set -euxo pipefail \
-    \
-    && echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
+RUN echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
     && apk --update add upx@community \
     && scanelf --nobanner --needed /usr/local/bin/beanstalkd | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' | xargs apk add \
     \
     && upx -9 /usr/local/bin/beanstalkd \
-    && apk del --purge apk-tools upx \
-    \
-    && tar -czf lib.tar.gz /lib/*.so.*
+    && apk del --purge apk-tools upx
 
 
 FROM busybox
@@ -48,15 +45,11 @@ ARG VCS_URL
 EXPOSE 11300
 
 COPY --from=libs /usr/local/bin/beanstalkd /bin/
-COPY --from=libs /lib.tar.gz /
+COPY --from=libs /lib/ld-musl-x86_64.so.1 /lib/
 
-RUN set -euxo pipefail \
+RUN addgroup -S beanstalkd && adduser -H -s /sbin/nologin -D -S -G beanstalkd beanstalkd \
     \
-    && addgroup -S beanstalkd \
-    && adduser -H -s /sbin/nologin -D -S -G beanstalkd beanstalkd \
-    \
-    && tar -xzf /lib.tar.gz \
-    && rm -rf /*.tar.gz
+    && ln -s /lib/ld-musl-x86_64.so.1 /lib/libc.musl-x86_64.so.1
 
 USER beanstalkd
 ENTRYPOINT ["beanstalkd", "-u", "beanstalkd"]
