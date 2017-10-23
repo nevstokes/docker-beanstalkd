@@ -1,6 +1,4 @@
-SOURCE_COMMIT = $(shell git rev-parse --short HEAD)
 IMAGE_NAME = nevstokes/beanstalkd
-BEANSTALKD_VERSION = 1.10
 
 export
 
