@@ -36,7 +36,7 @@ RUN echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /et
     && apk del --purge apk-tools upx
 
 
-FROM busybox
+FROM nevstokes/busybox
 
 ARG BUILD_DATE
 ARG VCS_REF
