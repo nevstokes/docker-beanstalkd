@@ -36,7 +36,7 @@ RUN echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /et
     && apk del --purge apk-tools upx
 
 
-FROM nevstokes/busybox
+FROM nevstokes/base
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -47,12 +47,7 @@ EXPOSE 11300
 COPY --from=libs /usr/local/bin/beanstalkd /bin/
 COPY --from=libs /lib/ld-musl-x86_64.so.1 /lib/
 
-RUN addgroup -S beanstalkd && adduser -H -s /sbin/nologin -D -S -G beanstalkd beanstalkd \
-    \
-    && ln -s /lib/ld-musl-x86_64.so.1 /lib/libc.musl-x86_64.so.1
-
-USER beanstalkd
-ENTRYPOINT ["beanstalkd", "-u", "beanstalkd"]
+ENTRYPOINT ["beanstalkd"]
 
 LABEL maintainer="Nev Stokes <mail@nevstokes.com>" \
         description="Beanstalkd general-purpose work queue" \
