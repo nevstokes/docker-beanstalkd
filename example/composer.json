@@ -1,0 +1,12 @@
+{
+    "name": "nevstokes/example-beanstalkd",
+    "require": {
+        "pda/pheanstalk": "^3.1"
+    },
+    "authors": [
+        {
+            "name": "Nev Stokes",
+            "email": "mail@nevstokes.com"
+        }
+    ]
+}

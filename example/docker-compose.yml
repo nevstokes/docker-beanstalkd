@@ -1,0 +1,36 @@
+version: '2.3'
+
+services:
+
+  consumer:
+    image: php:7.1-fpm-alpine
+    env_file:
+      - .env
+    entrypoint:
+      - /var/www/html/worker.php
+    depends_on:
+      producer:
+        condition: service_started
+      queue:
+        condition: service_started
+    read_only: true
+    restart: unless-stopped
+    volumes:
+      - ./src/worker.php:/var/www/html/worker.php
+      - ./vendor:/var/www/vendor
+
+  producer:
+    image: php:7.1-fpm-alpine
+    env_file:
+      - .env
+    depends_on:
+      queue:
+        condition: service_started
+    read_only: true
+    volumes:
+      - ./src/generate.php:/var/www/html/generate.php
+      - ./vendor:/var/www/vendor
+
+  queue:
+    image: nevstokes/beanstalkd
+    restart: unless-stopped
