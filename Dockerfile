@@ -4,12 +4,14 @@ COPY alpine.patch github-releases.xsl /
 
 ENV GITHUB_REPO=kr/beanstalkd
 
-RUN apk --update add \
+RUN echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
+        && apk --update add \
         gcc \
         libressl \
         libxslt-dev \
         make \
-        musl-dev
+        musl-dev \
+        upx@community
 
 RUN mkdir -p /usr/src/beanstalk \
     \
@@ -20,20 +22,8 @@ RUN cd /usr/src/beanstalk \
     && patch -p0 < /alpine.patch \
     && make CFLAGS=-Os \
     \
-    && strip --strip-all beanstalkd
-
-
-FROM alpine:3.6 AS libs
-
-COPY --from=build /usr/src/beanstalk/beanstalkd /usr/local/bin/
-COPY --from=build /var/cache/apk /var/cache/apk/
-
-RUN echo '@community http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
-    && apk --update add upx@community \
-    && scanelf --nobanner --needed /usr/local/bin/beanstalkd | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' | xargs apk add \
-    \
-    && upx -9 /usr/local/bin/beanstalkd \
-    && apk del --purge apk-tools upx
+    && strip --strip-all beanstalkd \
+    && upx -9 beanstalkd
 
 
 FROM scratch
@@ -44,8 +34,8 @@ ARG VCS_URL
 
 EXPOSE 11300
 
-COPY --from=libs /usr/local/bin/beanstalkd /bin/
-COPY --from=libs /lib/ld-musl-x86_64.so.1 /lib/
+COPY --from=build /usr/src/beanstalk/beanstalkd /bin/
+COPY --from=build /lib/ld-musl-x86_64.so.1 /lib/
 
 ENTRYPOINT ["beanstalkd"]
 
