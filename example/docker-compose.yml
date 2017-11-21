@@ -1,4 +1,4 @@
-version: '2.3'
+version: '2.1'
 
 services:
 
@@ -14,7 +14,7 @@ services:
       queue:
         condition: service_started
     read_only: true
-    restart: unless-stopped
+    restart: on-failure
     volumes:
       - ./src/worker.php:/var/www/html/worker.php
       - ./vendor:/var/www/vendor
@@ -33,4 +33,11 @@ services:
 
   queue:
     image: nevstokes/beanstalkd
-    restart: unless-stopped
+    restart: on-failure
+    read_only: true
+    entrypoint:
+      - beanstalkd
+      - -b
+      - /tmp
+    volumes:
+      - ./data:/tmp
